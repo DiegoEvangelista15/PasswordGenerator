@@ -1,3 +1,4 @@
+import json
 from tkinter import *
 from tkinter import messagebox
 import string
@@ -22,6 +23,11 @@ def save_password():
     web = input.get()
     email = input2.get()
     password = input3.get()
+    new_data = {web: {
+        'email': email,
+        'password': password,
+    }
+    }
 
     if len(web) == 0 or len(password) == 0:
         messagebox.showinfo(title='Erro', message='Voce precisa preencher os campos em branco')
@@ -33,14 +39,46 @@ def save_password():
         messagebox.showinfo(title='Mensagem', message='Arquivo Salvo!!')
 
         if itsok:
-            with open('data.txt', 'a') as data_file:
-                data_file.write(f'{web} | {email} | {password}\n')
+            try:
+                with open('data.json', 'r') as data_file:
+                    # json.dump(new_data, data_file, indent=4)
+                    # reading old data
+                    data = json.load(data_file)
+            except FileNotFoundError:
+                with open('data.json', 'w') as data_file:
+                    json.dump(new_data, data_file, indent=4)
+            else:
+                # Updating old data with new data
+                data.update(new_data)
+                with open('data.json', 'w') as data_file:
+                    # Saving updated data
+                    json.dump(data, data_file, indent=4)
+            finally:
                 input.delete(0, END)
                 input3.delete(0, END)
+
         else:
             messagebox.showinfo(title='Mensagem', message='Nada foi salvo, Obrigado!!')
             input.delete(0, END)
             input3.delete(0, END)
+
+
+def find_password():
+    web = input.get()
+    try:
+        with open('data.json') as data_file:
+            data = json.load(data_file)
+    except FileNotFoundError:
+        messagebox.showinfo(title='Error', message=f'Nao foram inseridos dados!!!')
+    else:
+        if len(web) == 0:
+            messagebox.showinfo(title='Error', message=f'Nao foram inseridos dados')
+        elif web in data:
+            m_email = data[web]['email']
+            m_password = data[web]["password"]
+            messagebox.showinfo(title=web, message=f'Os dados sao:\nEmail:{m_email}\nPassword:{m_password}')
+        else:
+            messagebox.showinfo(title='Error', message=f'Nao existe os dados de {web} no arquivo Json')
 
 
 # ---------------------------- UI SETUP ------------------------------- #
@@ -59,8 +97,8 @@ email_username.grid(column=0, row=2)
 password = Label(text='Password')
 password.grid(column=0, row=3)
 
-input = Entry(width=55)
-input.grid(column=1, row=1, columnspan=2)
+input = Entry(width=36)
+input.grid(column=1, row=1)
 input.focus()
 
 input2 = Entry(width=55)
@@ -69,6 +107,9 @@ input2.insert(0, 'Diego@email.com ')
 
 input3 = Entry(width=36)
 input3.grid(column=1, row=3)
+
+button_generate_pass = Button(text='Search', width=14, command=find_password)
+button_generate_pass.grid(column=2, row=1)
 
 button_generate_pass = Button(text='Generate Password', command=generate_pass)
 button_generate_pass.grid(column=2, row=3)
